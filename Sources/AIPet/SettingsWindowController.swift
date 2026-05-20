@@ -6,6 +6,7 @@ final class SettingsWindowController: NSWindowController {
     private let modelField = NSTextField()
     private let apiKeyField = NSSecureTextField()
     private let searchEndpointField = NSTextField()
+    private let searchApiKeyHeaderField = NSTextField()
     private let searchApiKeyField = NSSecureTextField()
     private let personaField = NSTextView()
 
@@ -13,7 +14,7 @@ final class SettingsWindowController: NSWindowController {
         self.settings = settings
 
         let window = ShortcutWindow(
-            contentRect: CGRect(x: 0, y: 0, width: 640, height: 640),
+            contentRect: CGRect(x: 0, y: 0, width: 640, height: 700),
             styleMask: [.titled, .closable, .miniaturizable],
             backing: .buffered,
             defer: false
@@ -67,7 +68,8 @@ final class SettingsWindowController: NSWindowController {
         root.addArrangedSubview(row(title: "모델", subtitle: "요청에 사용할 모델 이름입니다.", field: modelField))
         root.addArrangedSubview(row(title: "API 키", subtitle: "Keychain에 저장됩니다.", field: apiKeyField))
         root.addArrangedSubview(row(title: "검색 엔드포인트", subtitle: "선택 사항입니다. GET 요청에 q 파라미터를 붙여 JSON 검색 결과를 가져옵니다.", field: searchEndpointField))
-        root.addArrangedSubview(row(title: "검색 API 키", subtitle: "선택 사항입니다. Bearer 토큰으로 전송됩니다.", field: searchApiKeyField))
+        root.addArrangedSubview(row(title: "검색 인증 헤더", subtitle: "예: Authorization, X-Subscription-Token. 비워두면 Authorization을 사용합니다.", field: searchApiKeyHeaderField))
+        root.addArrangedSubview(row(title: "검색 API 키", subtitle: "선택 사항입니다. Authorization 헤더는 Bearer 토큰으로, 그 외 헤더는 원문으로 전송됩니다.", field: searchApiKeyField))
 
         let personaLabel = NSTextField(labelWithString: "페르소나")
         personaLabel.font = .systemFont(ofSize: 13, weight: .semibold)
@@ -86,7 +88,7 @@ final class SettingsWindowController: NSWindowController {
             scroll.heightAnchor.constraint(equalToConstant: 140)
         ])
 
-        let hint = NSTextField(wrappingLabelWithString: "AI 엔드포인트가 /chat/completions로 끝나지 않으면 /v1/chat/completions를 자동으로 붙입니다. 검색 엔드포인트는 GET 요청에 q 파라미터를 붙여 호출합니다.")
+        let hint = NSTextField(wrappingLabelWithString: "검색 예시: SearXNG는 https://example.com/search?format=json, Brave는 https://api.search.brave.com/res/v1/web/search 와 X-Subscription-Token 헤더를 사용합니다.")
         hint.textColor = .tertiaryLabelColor
         hint.font = .systemFont(ofSize: 12)
         root.addArrangedSubview(hint)
@@ -157,6 +159,7 @@ final class SettingsWindowController: NSWindowController {
         modelField.stringValue = settings.model
         apiKeyField.stringValue = settings.apiKey
         searchEndpointField.stringValue = settings.searchEndpoint
+        searchApiKeyHeaderField.stringValue = settings.searchApiKeyHeader
         searchApiKeyField.stringValue = settings.searchApiKey
         personaField.string = settings.persona
     }
@@ -166,6 +169,7 @@ final class SettingsWindowController: NSWindowController {
         settings.model = modelField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
         settings.apiKey = apiKeyField.stringValue
         settings.searchEndpoint = searchEndpointField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        settings.searchApiKeyHeader = searchApiKeyHeaderField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
         settings.searchApiKey = searchApiKeyField.stringValue
         settings.persona = personaField.string.trimmingCharacters(in: .whitespacesAndNewlines)
         window?.close()

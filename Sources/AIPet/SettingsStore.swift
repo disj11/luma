@@ -46,6 +46,11 @@ final class SettingsStore {
         set { defaults.set(newValue, forKey: "searchEndpoint") }
     }
 
+    var searchApiKeyHeader: String {
+        get { defaults.string(forKey: "searchApiKeyHeader") ?? "Authorization" }
+        set { defaults.set(newValue, forKey: "searchApiKeyHeader") }
+    }
+
     var apiKey: String {
         get {
             KeychainStore.read(service: "Luma", account: "apiKey")

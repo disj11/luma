@@ -38,7 +38,8 @@ final class SearchClient {
         request.httpMethod = "GET"
         request.addValue("application/json", forHTTPHeaderField: "Accept")
         if !settings.searchApiKey.isEmpty {
-            request.addValue("Bearer \(settings.searchApiKey)", forHTTPHeaderField: "Authorization")
+            let header = settings.searchApiKeyHeader.trimmingCharacters(in: .whitespacesAndNewlines)
+            request.addValue(searchAuthorizationValue(for: header), forHTTPHeaderField: header.isEmpty ? "Authorization" : header)
         }
 
         URLSession.shared.dataTask(with: request) { data, _, error in
@@ -87,6 +88,16 @@ final class SearchClient {
             } else if let nested = dictionary[key] as? [String: Any],
                       let value = nested["value"] as? [Any] {
                 arrays.append(value)
+            } else if let nested = dictionary[key] as? [String: Any],
+                      let results = nested["results"] as? [Any] {
+                arrays.append(results)
+            }
+        }
+
+        for key in ["web", "news", "places", "local"] {
+            guard let nested = dictionary[key] as? [String: Any] else { continue }
+            if let results = nested["results"] as? [Any] {
+                arrays.append(results)
             }
         }
         return arrays
@@ -110,6 +121,17 @@ final class SearchClient {
             }
         }
         return nil
+    }
+
+    private func searchAuthorizationValue(for header: String) -> String {
+        let key = settings.searchApiKey
+        guard header.isEmpty || header.caseInsensitiveCompare("Authorization") == .orderedSame else {
+            return key
+        }
+        if key.localizedCaseInsensitiveContains("Bearer ") {
+            return key
+        }
+        return "Bearer \(key)"
     }
 }
 

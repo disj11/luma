@@ -72,7 +72,12 @@ Movement polish:
 
 The optional search endpoint is intentionally provider-neutral. Luma sends a GET request and appends `q=<user query>` if the URL does not already include a query parameter named `q` or `query`.
 
-Supported JSON result shapes include arrays or dictionaries containing `results`, `organic`, `items`, `webPages.value`, or `documents`. Each item should contain title/name, url/link, and snippet/content/description when possible.
+Supported JSON result shapes include arrays or dictionaries containing `results`, `organic`, `items`, `webPages.value`, `documents`, or nested provider shapes such as `web.results`. Each item should contain title/name, url/link, and snippet/content/description when possible.
+
+Examples:
+- SearXNG: `https://search.example.com/search?format=json`, no API key required for many private instances.
+- Brave Search API: `https://api.search.brave.com/res/v1/web/search`, search auth header `X-Subscription-Token`, search API key set to the Brave token.
+- Custom proxy: expose a GET endpoint that returns `{ "results": [{ "title": "...", "url": "...", "snippet": "..." }] }`.
 
 ## Quality Bar
 
