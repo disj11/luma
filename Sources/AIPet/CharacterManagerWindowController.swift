@@ -6,13 +6,15 @@ final class CharacterManagerWindowController: NSWindowController {
     private let library: CharacterPackLibrary
     private var packs: [LoadedCharacterPack] = []
     private let popup = NSPopUpButton()
+    private let posePopup = NSPopUpButton()
+    private let previewView = CharacterPosePreviewView(frame: CGRect(x: 0, y: 0, width: 260, height: 300))
     private let detailLabel = NSTextField(labelWithString: "")
     private let directoryLabel = NSTextField(labelWithString: "")
 
     init(library: CharacterPackLibrary) {
         self.library = library
         let window = ShortcutWindow(
-            contentRect: CGRect(x: 0, y: 0, width: 520, height: 250),
+            contentRect: CGRect(x: 0, y: 0, width: 680, height: 420),
             styleMask: [.titled, .closable, .miniaturizable],
             backing: .buffered,
             defer: false
@@ -47,19 +49,24 @@ final class CharacterManagerWindowController: NSWindowController {
     private func buildUI() {
         guard let contentView = window?.contentView else { return }
 
+        let root = NSStackView()
+        root.orientation = .horizontal
+        root.spacing = 22
+        root.edgeInsets = NSEdgeInsets(top: 20, left: 20, bottom: 20, right: 20)
+        root.translatesAutoresizingMaskIntoConstraints = false
+        contentView.addSubview(root)
+
+        NSLayoutConstraint.activate([
+            root.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+            root.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+            root.topAnchor.constraint(equalTo: contentView.topAnchor),
+            root.bottomAnchor.constraint(equalTo: contentView.bottomAnchor)
+        ])
+
         let stack = NSStackView()
         stack.orientation = .vertical
         stack.spacing = 14
-        stack.edgeInsets = NSEdgeInsets(top: 20, left: 20, bottom: 20, right: 20)
-        stack.translatesAutoresizingMaskIntoConstraints = false
-        contentView.addSubview(stack)
-
-        NSLayoutConstraint.activate([
-            stack.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
-            stack.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
-            stack.topAnchor.constraint(equalTo: contentView.topAnchor),
-            stack.bottomAnchor.constraint(equalTo: contentView.bottomAnchor)
-        ])
+        root.addArrangedSubview(stack)
 
         let title = NSTextField(labelWithString: "캐릭터 선택")
         title.font = .systemFont(ofSize: 13, weight: .semibold)
@@ -68,6 +75,14 @@ final class CharacterManagerWindowController: NSWindowController {
         popup.target = self
         popup.action = #selector(selectCharacter)
         stack.addArrangedSubview(popup)
+
+        let poseTitle = NSTextField(labelWithString: "포즈 미리보기")
+        poseTitle.font = .systemFont(ofSize: 13, weight: .semibold)
+        stack.addArrangedSubview(poseTitle)
+
+        posePopup.target = self
+        posePopup.action = #selector(selectPose)
+        stack.addArrangedSubview(posePopup)
 
         detailLabel.textColor = .secondaryLabelColor
         detailLabel.lineBreakMode = .byWordWrapping
@@ -95,6 +110,16 @@ final class CharacterManagerWindowController: NSWindowController {
         buttons.addArrangedSubview(revealButton)
         buttons.addArrangedSubview(NSView())
         stack.addArrangedSubview(buttons)
+
+        let spacer = NSView()
+        stack.addArrangedSubview(spacer)
+
+        previewView.translatesAutoresizingMaskIntoConstraints = false
+        root.addArrangedSubview(previewView)
+        NSLayoutConstraint.activate([
+            stack.widthAnchor.constraint(greaterThanOrEqualToConstant: 360),
+            previewView.widthAnchor.constraint(equalToConstant: 260)
+        ])
     }
 
     @objc private func selectCharacter() {
@@ -104,6 +129,10 @@ final class CharacterManagerWindowController: NSWindowController {
         library.select(pack)
         onSelectPack?(pack)
         updateDetails()
+    }
+
+    @objc private func selectPose() {
+        updatePreview()
     }
 
     @objc private func addCharacter() {
@@ -151,6 +180,8 @@ final class CharacterManagerWindowController: NSWindowController {
         guard packs.indices.contains(index) else {
             detailLabel.stringValue = "사용 가능한 캐릭터 팩이 없습니다."
             directoryLabel.stringValue = library.userCharactersDirectory.path
+            posePopup.removeAllItems()
+            previewView.pack = nil
             return
         }
 
@@ -158,6 +189,39 @@ final class CharacterManagerWindowController: NSWindowController {
         let source = pack.isBundled ? "기본 제공" : "사용자 추가"
         detailLabel.stringValue = "\(pack.manifest.displayName) · \(source) · \(pack.manifest.id)"
         directoryLabel.stringValue = pack.baseURL.path
+        reloadPoses(for: pack)
+        updatePreview()
+    }
+
+    private func reloadPoses(for pack: LoadedCharacterPack) {
+        let selectedPose = selectedPoseKey()
+        posePopup.removeAllItems()
+        for pose in PoseKey.allCases where pack.images[pose] != nil {
+            posePopup.addItem(withTitle: pose.rawValue)
+        }
+
+        if let selectedPose, pack.images[selectedPose] != nil {
+            posePopup.selectItem(withTitle: selectedPose.rawValue)
+        } else if let defaultItem = posePopup.item(withTitle: pack.manifest.defaultPose.rawValue) {
+            posePopup.select(defaultItem)
+        } else {
+            posePopup.selectItem(at: 0)
+        }
+    }
+
+    private func selectedPoseKey() -> PoseKey? {
+        PoseKey(rawValue: posePopup.titleOfSelectedItem ?? "")
+    }
+
+    private func updatePreview() {
+        let index = popup.indexOfSelectedItem
+        guard packs.indices.contains(index), let pose = selectedPoseKey() else {
+            previewView.pack = nil
+            return
+        }
+
+        previewView.pack = packs[index]
+        previewView.pose = pose
     }
 
     private func showError(_ error: Error) {
@@ -172,5 +236,107 @@ final class CharacterManagerWindowController: NSWindowController {
         alert.alertStyle = report.isValid ? .informational : .warning
         alert.addButton(withTitle: "확인")
         alert.beginSheetModal(for: window!)
+    }
+}
+
+private final class CharacterPosePreviewView: NSView {
+    var pack: LoadedCharacterPack? {
+        didSet { needsDisplay = true }
+    }
+
+    var pose: PoseKey = .idle {
+        didSet { needsDisplay = true }
+    }
+
+    override var isOpaque: Bool { false }
+
+    override func draw(_ dirtyRect: NSRect) {
+        super.draw(dirtyRect)
+
+        let panelRect = bounds.insetBy(dx: 2, dy: 2)
+        NSColor.controlBackgroundColor.withAlphaComponent(0.72).setFill()
+        NSBezierPath(roundedRect: panelRect, xRadius: 12, yRadius: 12).fill()
+
+        guard let pack, let image = pack.images[pose] else {
+            drawCentered("미리볼 포즈가 없습니다.", in: panelRect)
+            return
+        }
+
+        let windowSize = CGSize(width: 220, height: 220)
+        let previewOrigin = CGPoint(x: panelRect.midX - windowSize.width / 2, y: panelRect.maxY - windowSize.height - 26)
+        let previewRect = CGRect(origin: previewOrigin, size: windowSize)
+
+        drawPreviewBackground(previewRect)
+
+        if let target = pack.renderedImageRect(for: pose, windowSize: windowSize) {
+            let imageRect = target.offsetBy(dx: previewRect.minX, dy: previewRect.minY)
+            image.draw(
+                in: imageRect,
+                from: CGRect(origin: .zero, size: image.size),
+                operation: .sourceOver,
+                fraction: 1,
+                respectFlipped: true,
+                hints: [.interpolation: NSImageInterpolation.high.rawValue]
+            )
+
+            NSColor.systemBlue.withAlphaComponent(0.65).setStroke()
+            let imagePath = NSBezierPath(rect: imageRect)
+            imagePath.lineWidth = 1
+            imagePath.stroke()
+        }
+
+        if let visibleBounds = pack.visibleBoundsInPetWindow(for: pose, windowSize: windowSize) {
+            let boundsRect = visibleBounds.offsetBy(dx: previewRect.minX, dy: previewRect.minY)
+            NSColor.systemPurple.withAlphaComponent(0.82).setStroke()
+            let boundsPath = NSBezierPath(rect: boundsRect)
+            boundsPath.lineWidth = 1.5
+            boundsPath.stroke()
+
+            NSColor.systemRed.withAlphaComponent(0.9).setStroke()
+            let baseline = NSBezierPath()
+            baseline.move(to: CGPoint(x: previewRect.minX, y: boundsRect.minY))
+            baseline.line(to: CGPoint(x: previewRect.maxX, y: boundsRect.minY))
+            baseline.lineWidth = 1.3
+            baseline.stroke()
+
+            let metrics = "하단 기준 \(Int(visibleBounds.minY.rounded()))px · 영역 \(Int(visibleBounds.width))x\(Int(visibleBounds.height))"
+            drawCaption(metrics, at: CGPoint(x: panelRect.minX + 14, y: panelRect.minY + 38))
+        }
+
+        drawCaption("\(pack.manifest.displayName) · \(pose.rawValue)", at: CGPoint(x: panelRect.minX + 14, y: panelRect.minY + 16))
+    }
+
+    private func drawPreviewBackground(_ rect: CGRect) {
+        NSColor.windowBackgroundColor.setFill()
+        NSBezierPath(roundedRect: rect, xRadius: 8, yRadius: 8).fill()
+
+        NSColor.separatorColor.withAlphaComponent(0.5).setStroke()
+        let border = NSBezierPath(roundedRect: rect, xRadius: 8, yRadius: 8)
+        border.lineWidth = 1
+        border.stroke()
+
+        NSColor.separatorColor.withAlphaComponent(0.4).setStroke()
+        let ground = NSBezierPath()
+        ground.move(to: CGPoint(x: rect.minX + 10, y: rect.minY + 20))
+        ground.line(to: CGPoint(x: rect.maxX - 10, y: rect.minY + 20))
+        ground.lineWidth = 1
+        ground.stroke()
+    }
+
+    private func drawCentered(_ text: String, in rect: CGRect) {
+        let attributes: [NSAttributedString.Key: Any] = [
+            .font: NSFont.systemFont(ofSize: 12, weight: .medium),
+            .foregroundColor: NSColor.secondaryLabelColor
+        ]
+        let size = text.size(withAttributes: attributes)
+        text.draw(at: CGPoint(x: rect.midX - size.width / 2, y: rect.midY - size.height / 2), withAttributes: attributes)
+    }
+
+    private func drawCaption(_ text: String, at point: CGPoint) {
+        let attributes: [NSAttributedString.Key: Any] = [
+            .font: NSFont.systemFont(ofSize: 11, weight: .medium),
+            .foregroundColor: NSColor.secondaryLabelColor
+        ]
+        text.draw(at: point, withAttributes: attributes)
     }
 }

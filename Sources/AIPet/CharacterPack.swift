@@ -112,15 +112,7 @@ struct LoadedCharacterPack {
             return nil
         }
 
-        let baseSize = min(windowSize.width - 20, windowSize.height - 20, manifest.render.baseSize)
-        let size = baseSize * (pose.scale ?? 1)
-        let target = CGRect(
-            x: windowSize.width / 2 - size / 2,
-            y: manifest.render.baseYOffset + (pose.yOffset ?? 0),
-            width: size,
-            height: size
-        )
-
+        let target = renderedImageRect(for: pose, windowSize: windowSize)
         let scaleX = target.width / image.size.width
         let scaleY = target.height / image.size.height
         return CGRect(
@@ -128,6 +120,24 @@ struct LoadedCharacterPack {
             y: target.minY + alphaBounds.minY * scaleY,
             width: alphaBounds.width * scaleX,
             height: alphaBounds.height * scaleY
+        )
+    }
+
+    func renderedImageRect(for key: PoseKey, windowSize: CGSize) -> CGRect? {
+        guard let pose = manifest.pose(for: key), images[key] != nil else {
+            return nil
+        }
+        return renderedImageRect(for: pose, windowSize: windowSize)
+    }
+
+    func renderedImageRect(for pose: CharacterPack.Pose, windowSize: CGSize) -> CGRect {
+        let baseSize = min(windowSize.width - 20, windowSize.height - 20, manifest.render.baseSize)
+        let size = baseSize * (pose.scale ?? 1)
+        return CGRect(
+            x: windowSize.width / 2 - size / 2,
+            y: manifest.render.baseYOffset + (pose.yOffset ?? 0),
+            width: size,
+            height: size
         )
     }
 

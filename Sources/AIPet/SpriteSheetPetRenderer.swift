@@ -124,16 +124,7 @@ final class SpriteSheetPetRenderer {
     }
 
     private func targetRect(for pose: CharacterPack.Pose, in bounds: CGRect) -> CGRect {
-        let baseSize = min(bounds.width - 20, bounds.height - 20, pack.manifest.render.baseSize)
-        let size = baseSize * (pose.scale ?? 1)
-        let y = bounds.minY + pack.manifest.render.baseYOffset + (pose.yOffset ?? 0)
-
-        return CGRect(
-            x: bounds.midX - size / 2,
-            y: y,
-            width: size,
-            height: size
-        )
+        pack.renderedImageRect(for: pose, windowSize: bounds.size).offsetBy(dx: bounds.minX, dy: bounds.minY)
     }
 
     private func easeOutBack(_ value: CGFloat) -> CGFloat {
