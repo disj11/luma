@@ -41,6 +41,11 @@ final class SettingsStore {
         set { defaults.set(newValue?.uuidString, forKey: "currentChatSessionID") }
     }
 
+    var searchEndpoint: String {
+        get { defaults.string(forKey: "searchEndpoint") ?? "" }
+        set { defaults.set(newValue, forKey: "searchEndpoint") }
+    }
+
     var apiKey: String {
         get {
             KeychainStore.read(service: "Luma", account: "apiKey")
@@ -48,6 +53,11 @@ final class SettingsStore {
                 ?? ""
         }
         set { KeychainStore.write(newValue, service: "Luma", account: "apiKey") }
+    }
+
+    var searchApiKey: String {
+        get { KeychainStore.read(service: "Luma", account: "searchApiKey") ?? "" }
+        set { KeychainStore.write(newValue, service: "Luma", account: "searchApiKey") }
     }
 }
 

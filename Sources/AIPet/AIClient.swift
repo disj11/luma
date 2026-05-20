@@ -23,12 +23,31 @@ struct ChatResponse: Decodable {
 
 final class AIClient {
     private let settings: SettingsStore
+    private lazy var searchClient = SearchClient(settings: settings)
 
     init(settings: SettingsStore) {
         self.settings = settings
     }
 
     func send(messages: [ChatMessage], completion: @escaping (Result<String, Error>) -> Void) {
+        if shouldSearch(messages.last?.content ?? ""), searchClient.isConfigured {
+            searchClient.search(query: messages.last?.content ?? "") { [weak self] result in
+                guard let self else { return }
+                var enrichedMessages = messages
+                if case .success(let results) = result, !results.isEmpty {
+                    enrichedMessages.append(ChatMessage(role: "system", content: self.searchContext(from: results)))
+                } else if case .failure(let error) = result {
+                    enrichedMessages.append(ChatMessage(role: "system", content: "검색 시도 실패: \(error.localizedDescription). 이 한계를 사용자에게 짧게 알리고, 확실한 정보만 답한다."))
+                }
+                self.sendChat(messages: enrichedMessages, completion: completion)
+            }
+            return
+        }
+
+        sendChat(messages: messages, completion: completion)
+    }
+
+    private func sendChat(messages: [ChatMessage], completion: @escaping (Result<String, Error>) -> Void) {
         do {
             let request = try makeRequest(messages: messages)
             URLSession.shared.dataTask(with: request) { data, _, error in
@@ -51,6 +70,32 @@ final class AIClient {
         } catch {
             completion(.failure(error))
         }
+    }
+
+    private func shouldSearch(_ message: String) -> Bool {
+        let keywords = [
+            "찾아", "검색", "근처", "맛집", "추천", "가격", "최신", "뉴스",
+            "일정", "영업", "주소", "전화", "예약", "후기", "어디", "장소"
+        ]
+        return keywords.contains { message.localizedCaseInsensitiveContains($0) }
+    }
+
+    private func searchContext(from results: [SearchResult]) -> String {
+        let body = results.enumerated().map { index, result in
+            """
+            \(index + 1). \(result.title)
+            URL: \(result.url)
+            요약: \(result.snippet)
+            """
+        }.joined(separator: "\n\n")
+
+        return """
+        다음은 사용자의 최신 요청을 처리하기 위해 앱이 가져온 검색 결과다.
+        답변에는 이 결과를 우선 사용하고, 가능한 경우 출처 링크를 포함한다.
+        캐릭터 말투는 유지하되 결과를 과장하지 않는다.
+
+        \(body)
+        """
     }
 
     private func makeRequest(messages: [ChatMessage]) throws -> URLRequest {
