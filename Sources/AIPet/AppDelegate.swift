@@ -8,6 +8,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var chatController: ChatWindowController?
     private var characterController: CharacterManagerWindowController?
     private var characterLibrary: CharacterPackLibrary?
+    private var surfaceDebugOverlay: SurfaceDebugOverlayController?
     private let globalHotKey = GlobalHotKey()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -38,6 +39,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         self.petController = petController
         self.chatController = chatController
         self.characterLibrary = characterLibrary
+        self.surfaceDebugOverlay = SurfaceDebugOverlayController(world: world)
 
         installNotificationHandlers()
         configureStatusItem()
@@ -68,6 +70,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(.separator())
         menu.addItem(statusMenuItem(title: "캐릭터", action: #selector(openCharacters)))
         menu.addItem(statusMenuItem(title: "설정", action: #selector(openSettings)))
+        menu.addItem(.separator())
+        menu.addItem(statusMenuItem(title: "디버그 Surface", action: #selector(toggleSurfaceDebugOverlay)))
         menu.addItem(.separator())
         menu.addItem(statusMenuItem(title: "종료", action: #selector(quit)))
         item.menu = menu
@@ -115,6 +119,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc private func quit() {
         NSApp.terminate(nil)
+    }
+
+    @objc private func toggleSurfaceDebugOverlay() {
+        surfaceDebugOverlay?.toggle()
     }
 
     private func updateVisibilityMenuItem() {
