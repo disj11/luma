@@ -2,11 +2,23 @@
 
 macOS character companion prototype built with Swift and AppKit.
 
+## Product Direction
+
+Luma is a character-first desktop AI companion. The character keeps its own tone, but still helps with real tasks such as search, recommendations, and contextual conversation.
+
 ## Run
 
 ```bash
 swift run Luma
 ```
+
+## Build App Bundle
+
+```bash
+bash Scripts/build_app_bundle.sh
+```
+
+The unsigned app bundle is written to `.build/Luma.app`.
 
 The app starts as a menu bar accessory with an original desktop character companion. Use the menu bar sparkles icon to open chat, settings, or call the character to the cursor.
 
@@ -20,8 +32,12 @@ The app starts as a menu bar accessory with an original desktop character compan
 - Click the character to open chat; right-click for quick character actions
 - Character selection and character pack import from the menu bar
 - API endpoint/model/persona settings
+- Optional search endpoint/API key settings
 - OpenAI-compatible `/v1/chat/completions` adapter
+- Chat sessions stored locally with recent-message context
+- Markdown rendering for assistant replies
 - AI replies are mirrored into the pet speech bubble
+- Surface debug overlay for tuning window/Dock/edge interactions
 
 ## Character Assets
 
@@ -33,7 +49,7 @@ The current character has 12 poses: idle, walk 1, walk 2, jump, fall, sit, sleep
 
 The original source sheet is kept at `Assets/Pets/LunaSera/luna-sera-pose-sheet-chroma.png`. Runtime rendering uses the extracted pose files rather than cropping from the source sheet, which avoids clipping and neighboring-pose artifacts.
 
-Character packs are selected through the `Characters` menu. User-installed packs are copied into the app's Application Support character folder.
+Character packs are selected through the `Characters` menu. User-installed packs are copied into `~/Library/Application Support/Luma/Characters`.
 
 On first launch, the built-in character is `루나 세라`, an original fantasy-idol mage companion with silver-lavender twin tails, a crescent ornament, and star-magic accents. Additional characters can be installed from the `Characters` menu by selecting a folder that contains a valid `manifest.json`.
 
@@ -46,8 +62,17 @@ Movement polish:
 
 - Window surface detection uses `CGWindowListCopyWindowInfo`.
 - Only screen bottom, Dock top, and window top surfaces are walkable. Window bottom/left/right edges are reserved for cling, peek, and wall-style reactions.
+- Luma does not request Accessibility permission for the default desktop behavior.
 - API keys are stored in Keychain.
+- Chat sessions are stored in `~/Library/Application Support/Luma/ChatSessions`.
+- Optional search integration expects a JSON endpoint that accepts a `q` query parameter.
 - Some macOS modes such as full screen Spaces and Stage Manager may require additional tuning.
+
+## Search Endpoint Shape
+
+The optional search endpoint is intentionally provider-neutral. Luma sends a GET request and appends `q=<user query>` if the URL does not already include a query parameter named `q` or `query`.
+
+Supported JSON result shapes include arrays or dictionaries containing `results`, `organic`, `items`, `webPages.value`, or `documents`. Each item should contain title/name, url/link, and snippet/content/description when possible.
 
 ## Quality Bar
 

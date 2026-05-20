@@ -57,7 +57,7 @@ final class SettingsWindowController: NSWindowController {
         title.font = .systemFont(ofSize: 21, weight: .semibold)
         root.addArrangedSubview(title)
 
-        let description = NSTextField(wrappingLabelWithString: "사용할 API 엔드포인트, 모델, 페르소나를 설정합니다.")
+        let description = NSTextField(wrappingLabelWithString: "사용할 AI API, 선택 검색 provider, 페르소나를 설정합니다. 기본 데스크톱 동작은 Accessibility 권한을 요구하지 않습니다.")
         description.textColor = .secondaryLabelColor
         description.font = .systemFont(ofSize: 13)
         root.addArrangedSubview(description)
@@ -86,7 +86,7 @@ final class SettingsWindowController: NSWindowController {
             scroll.heightAnchor.constraint(equalToConstant: 140)
         ])
 
-        let hint = NSTextField(wrappingLabelWithString: "엔드포인트가 /chat/completions로 끝나지 않으면 /v1/chat/completions를 자동으로 붙입니다.")
+        let hint = NSTextField(wrappingLabelWithString: "AI 엔드포인트가 /chat/completions로 끝나지 않으면 /v1/chat/completions를 자동으로 붙입니다. 검색 엔드포인트는 GET 요청에 q 파라미터를 붙여 호출합니다.")
         hint.textColor = .tertiaryLabelColor
         hint.font = .systemFont(ofSize: 12)
         root.addArrangedSubview(hint)
