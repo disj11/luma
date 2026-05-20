@@ -20,7 +20,7 @@ bash Scripts/build_app_bundle.sh
 
 The unsigned app bundle is written to `.build/Luma.app`.
 
-The app starts as a menu bar accessory with an original desktop character companion. Use the menu bar sparkles icon to open chat, settings, or call the character to the cursor.
+The app starts as a menu bar accessory with an original desktop character companion. On first launch, Luma shows a short Korean onboarding window. Use the menu bar sparkles icon to open chat, settings, character management, or surface debugging.
 
 ## Current MVP
 
@@ -35,9 +35,12 @@ The app starts as a menu bar accessory with an original desktop character compan
 - Optional search endpoint/API key settings
 - OpenAI-compatible `/v1/chat/completions` adapter
 - Chat sessions stored locally with recent-message context
+- Long sessions are compacted into local summary memory
+- AI requests can be cancelled and failed prompts can be retried
 - Markdown rendering for assistant replies
 - AI replies are mirrored into the pet speech bubble
 - Surface debug overlay for tuning window/Dock/edge interactions
+- First-launch onboarding explains permissions, chat, search, character packs, and local data paths
 
 ## Character Assets
 

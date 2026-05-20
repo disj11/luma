@@ -7,6 +7,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var settingsController: SettingsWindowController?
     private var chatController: ChatWindowController?
     private var characterController: CharacterManagerWindowController?
+    private var onboardingController: OnboardingWindowController?
     private var characterLibrary: CharacterPackLibrary?
     private var surfaceDebugOverlay: SurfaceDebugOverlayController?
     private let globalHotKey = GlobalHotKey()
@@ -47,6 +48,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self?.openChat()
         }
         petController.start()
+        showOnboardingIfNeeded(settings: settings)
     }
 
     private func installNotificationHandlers() {
@@ -99,6 +101,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         settingsController?.showWindow(nil)
         settingsController?.window?.makeKeyAndOrderFront(nil)
         settingsController?.window?.orderFrontRegardless()
+    }
+
+    private func showOnboardingIfNeeded(settings: SettingsStore) {
+        guard !settings.didShowOnboarding else { return }
+        let controller = OnboardingWindowController(settings: settings)
+        controller.onOpenSettings = { [weak self] in
+            self?.openSettings()
+        }
+        onboardingController = controller
+        NSApp.activate(ignoringOtherApps: true)
+        controller.showWindow(nil)
+        controller.window?.makeKeyAndOrderFront(nil)
     }
 
     @objc private func openCharacters() {

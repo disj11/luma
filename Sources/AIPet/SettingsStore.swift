@@ -41,6 +41,11 @@ final class SettingsStore {
         set { defaults.set(newValue?.uuidString, forKey: "currentChatSessionID") }
     }
 
+    var didShowOnboarding: Bool {
+        get { defaults.bool(forKey: "didShowOnboarding") }
+        set { defaults.set(newValue, forKey: "didShowOnboarding") }
+    }
+
     var searchEndpoint: String {
         get { defaults.string(forKey: "searchEndpoint") ?? "" }
         set { defaults.set(newValue, forKey: "searchEndpoint") }

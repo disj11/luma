@@ -15,5 +15,7 @@ rm -rf "$APP_DIR"
 mkdir -p "$MACOS_DIR" "$RESOURCES_DIR"
 cp "$ROOT_DIR/.build/release/Luma" "$MACOS_DIR/Luma"
 cp "$ROOT_DIR/Resources/Info.plist" "$CONTENTS_DIR/Info.plist"
+cp -R "$ROOT_DIR/.build/arm64-apple-macosx/release/Luma_AIPet.bundle" "$APP_DIR/Luma_AIPet.bundle"
+cp -R "$ROOT_DIR/.build/arm64-apple-macosx/release/Luma_AIPet.bundle" "$RESOURCES_DIR/Luma_AIPet.bundle"
 
 echo "Built $APP_DIR"
