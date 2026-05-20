@@ -85,10 +85,13 @@ final class CharacterManagerWindowController: NSWindowController {
 
         let addButton = NSButton(title: "캐릭터 추가...", target: self, action: #selector(addCharacter))
         addButton.bezelStyle = .rounded
+        let validateButton = NSButton(title: "팩 검증...", target: self, action: #selector(validateCharacter))
+        validateButton.bezelStyle = .rounded
         let revealButton = NSButton(title: "캐릭터 폴더 열기", target: self, action: #selector(openCharactersFolder))
         revealButton.bezelStyle = .rounded
 
         buttons.addArrangedSubview(addButton)
+        buttons.addArrangedSubview(validateButton)
         buttons.addArrangedSubview(revealButton)
         buttons.addArrangedSubview(NSView())
         stack.addArrangedSubview(buttons)
@@ -128,6 +131,21 @@ final class CharacterManagerWindowController: NSWindowController {
         NSWorkspace.shared.activateFileViewerSelecting([library.userCharactersDirectory])
     }
 
+    @objc private func validateCharacter() {
+        let panel = NSOpenPanel()
+        panel.title = "검증할 캐릭터 팩 폴더 선택"
+        panel.canChooseDirectories = true
+        panel.canChooseFiles = false
+        panel.allowsMultipleSelection = false
+        panel.prompt = "검증"
+
+        panel.beginSheetModal(for: window!) { [weak self] response in
+            guard let self, response == .OK, let url = panel.url else { return }
+            let report = CharacterPackValidator.validate(folder: url)
+            self.showValidationReport(report)
+        }
+    }
+
     private func updateDetails() {
         let index = popup.indexOfSelectedItem
         guard packs.indices.contains(index) else {
@@ -144,6 +162,15 @@ final class CharacterManagerWindowController: NSWindowController {
 
     private func showError(_ error: Error) {
         let alert = NSAlert(error: error)
+        alert.beginSheetModal(for: window!)
+    }
+
+    private func showValidationReport(_ report: CharacterPackValidationReport) {
+        let alert = NSAlert()
+        alert.messageText = report.isValid ? "캐릭터 팩을 사용할 수 있습니다." : "캐릭터 팩에 문제가 있습니다."
+        alert.informativeText = report.summary
+        alert.alertStyle = report.isValid ? .informational : .warning
+        alert.addButton(withTitle: "확인")
         alert.beginSheetModal(for: window!)
     }
 }

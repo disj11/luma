@@ -466,27 +466,33 @@ final class PetView: NSView {
 
     private func drawSpeechIfNeeded() {
         guard let speech, speechAge < 4.4 else { return }
+        let displayText = speech
+            .replacingOccurrences(of: "\n", with: " ")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .prefix(42)
         let attrs: [NSAttributedString.Key: Any] = [
             .font: NSFont.systemFont(ofSize: 13, weight: .semibold),
             .foregroundColor: NSColor(calibratedRed: 0.20, green: 0.14, blue: 0.09, alpha: 1)
         ]
-        let maxWidth = bounds.width - 34
-        let measured = (speech as NSString).boundingRect(
-            with: CGSize(width: maxWidth - 22, height: 48),
+        let maxWidth = bounds.width - 28
+        let measured = (String(displayText) as NSString).boundingRect(
+            with: CGSize(width: maxWidth - 24, height: 42),
             options: [.usesLineFragmentOrigin],
             attributes: attrs
         )
+        let width = min(maxWidth, max(52, ceil(measured.width) + 24))
+        let height = min(56, max(30, ceil(measured.height) + 14))
         let bubble = CGRect(
-            x: (bounds.width - min(maxWidth, measured.width + 24)) / 2,
-            y: bounds.maxY - measured.height - 32,
-            width: min(maxWidth, measured.width + 24),
-            height: measured.height + 14
+            x: max(4, min(bounds.width - width - 4, (bounds.width - width) / 2)),
+            y: bounds.maxY - height - 24,
+            width: width,
+            height: height
         )
         NSColor.white.withAlphaComponent(0.94).setFill()
         NSBezierPath(roundedRect: bubble, xRadius: 13, yRadius: 13).fill()
         NSColor(calibratedWhite: 0, alpha: 0.14).setStroke()
         NSBezierPath(roundedRect: bubble, xRadius: 13, yRadius: 13).stroke()
-        speech.draw(in: bubble.insetBy(dx: 12, dy: 7), withAttributes: attrs)
+        String(displayText).draw(in: bubble.insetBy(dx: 12, dy: 7), withAttributes: attrs)
     }
 
     private func emit(_ kind: PetParticle.Kind, count: Int) {
