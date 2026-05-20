@@ -6,6 +6,35 @@ struct ChatSession: Codable, Identifiable {
     var createdAt: Date
     var updatedAt: Date
     var messages: [ChatMessage]
+    var summary: String
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case title
+        case createdAt
+        case updatedAt
+        case messages
+        case summary
+    }
+
+    init(id: UUID, title: String, createdAt: Date, updatedAt: Date, messages: [ChatMessage], summary: String = "") {
+        self.id = id
+        self.title = title
+        self.createdAt = createdAt
+        self.updatedAt = updatedAt
+        self.messages = messages
+        self.summary = summary
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        title = try container.decode(String.self, forKey: .title)
+        createdAt = try container.decode(Date.self, forKey: .createdAt)
+        updatedAt = try container.decode(Date.self, forKey: .updatedAt)
+        messages = try container.decode([ChatMessage].self, forKey: .messages)
+        summary = try container.decodeIfPresent(String.self, forKey: .summary) ?? ""
+    }
 
     static func empty() -> ChatSession {
         let now = Date()
@@ -14,7 +43,8 @@ struct ChatSession: Codable, Identifiable {
             title: "새 대화",
             createdAt: now,
             updatedAt: now,
-            messages: []
+            messages: [],
+            summary: ""
         )
     }
 }

@@ -4,7 +4,7 @@ import CoreGraphics
 final class WorldModel {
     private(set) var surfaces: [Surface] = []
     private var lastRefresh = Date.distantPast
-    private let refreshInterval: TimeInterval = 0.35
+    private var refreshInterval: TimeInterval = 0.35
     private let ownPID = Int(ProcessInfo.processInfo.processIdentifier)
 
     func start() {
@@ -14,6 +14,10 @@ final class WorldModel {
     func refreshIfNeeded() {
         guard Date().timeIntervalSince(lastRefresh) >= refreshInterval else { return }
         refresh()
+    }
+
+    func setRefreshMode(active: Bool) {
+        refreshInterval = active ? 0.35 : 0.85
     }
 
     func surfaceBelow(centerX: CGFloat, halfWidth: CGFloat, previousBottom: CGFloat, currentBottom: CGFloat) -> Surface? {

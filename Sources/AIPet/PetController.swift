@@ -132,6 +132,7 @@ final class PetController {
             return
         }
 
+        world.setRefreshMode(active: shouldUseActiveWorldRefresh())
         world.refreshIfNeeded()
         reactToMouse(now: now)
         decideIfNeeded(now: now)
@@ -235,6 +236,10 @@ final class PetController {
     private func alignToGroundedSurfaceIfNeeded() {
         guard let groundedSurface, abs(velocity.dy) < 1 else { return }
         position.y = groundedSurface.frame.topSurfaceY - supportOffset(for: petView.mood)
+    }
+
+    private func shouldUseActiveWorldRefresh() -> Bool {
+        edgeSurface != nil || groundedSurface == nil || abs(velocity.dx) > 25 || abs(velocity.dy) > 25
     }
 
     private func supportOffset(for mood: PetMood) -> CGFloat {

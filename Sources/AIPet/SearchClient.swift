@@ -17,10 +17,11 @@ final class SearchClient {
         !settings.searchEndpoint.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
-    func search(query: String, completion: @escaping (Result<[SearchResult], Error>) -> Void) {
+    @discardableResult
+    func search(query: String, completion: @escaping (Result<[SearchResult], Error>) -> Void) -> URLSessionDataTask? {
         guard var components = URLComponents(string: settings.searchEndpoint) else {
             completion(.failure(SearchError.invalidEndpoint))
-            return
+            return nil
         }
 
         var items = components.queryItems ?? []
@@ -31,7 +32,7 @@ final class SearchClient {
 
         guard let url = components.url else {
             completion(.failure(SearchError.invalidEndpoint))
-            return
+            return nil
         }
 
         var request = URLRequest(url: url)
@@ -42,7 +43,7 @@ final class SearchClient {
             request.addValue(searchAuthorizationValue(for: header), forHTTPHeaderField: header.isEmpty ? "Authorization" : header)
         }
 
-        URLSession.shared.dataTask(with: request) { data, _, error in
+        let task = URLSession.shared.dataTask(with: request) { data, _, error in
             if let error {
                 completion(.failure(error))
                 return
@@ -58,7 +59,9 @@ final class SearchClient {
             } catch {
                 completion(.failure(error))
             }
-        }.resume()
+        }
+        task.resume()
+        return task
     }
 
     private static func parseResults(from object: Any) -> [SearchResult] {

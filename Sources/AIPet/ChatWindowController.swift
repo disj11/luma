@@ -13,9 +13,12 @@ final class ChatWindowController: NSWindowController {
     private let scrollView = NSScrollView()
     private let input = ModernTextField()
     private let sendButton = NSButton()
+    private let retryButton = NSButton()
     private var sessions: [ChatSession] = []
     private var currentSession = ChatSession.empty()
     private var isBusy = false
+    private var currentRequest: AIRequest?
+    private var lastFailedPrompt: String?
 
     init(settings: SettingsStore) {
         self.settings = settings
@@ -151,10 +154,18 @@ final class ChatWindowController: NSWindowController {
         sendButton.title = ""
         sendButton.isBordered = false
         sendButton.target = self
-        sendButton.action = #selector(send)
+        sendButton.action = #selector(sendOrCancel)
         sendButton.contentTintColor = .controlAccentColor
 
+        retryButton.image = NSImage(systemSymbolName: "arrow.clockwise", accessibilityDescription: "다시 시도")
+        retryButton.title = ""
+        retryButton.isBordered = false
+        retryButton.target = self
+        retryButton.action = #selector(retryLastPrompt)
+        retryButton.isHidden = true
+
         composerStack.addArrangedSubview(input)
+        composerStack.addArrangedSubview(retryButton)
         composerStack.addArrangedSubview(sendButton)
 
         NSLayoutConstraint.activate([
@@ -163,40 +174,84 @@ final class ChatWindowController: NSWindowController {
             composerStack.topAnchor.constraint(equalTo: composer.topAnchor),
             composerStack.bottomAnchor.constraint(equalTo: composer.bottomAnchor),
             composer.heightAnchor.constraint(equalToConstant: 56),
+            retryButton.widthAnchor.constraint(equalToConstant: 30),
             sendButton.widthAnchor.constraint(equalToConstant: 34)
         ])
+    }
+
+    @objc private func sendOrCancel() {
+        if isBusy {
+            cancelCurrentRequest()
+        } else {
+            send()
+        }
     }
 
     @objc private func send() {
         guard !isBusy else { return }
         let text = input.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else { return }
+        retryButton.isHidden = true
+        lastFailedPrompt = nil
         input.stringValue = ""
+        sendPrompt(text)
+    }
+
+    @objc private func retryLastPrompt() {
+        guard !isBusy, let prompt = lastFailedPrompt else { return }
+        retryButton.isHidden = true
+        lastFailedPrompt = nil
+        sendPrompt(prompt)
+    }
+
+    private func sendPrompt(_ text: String) {
         appendStoredMessage(ChatMessage(role: "user", content: text))
         setBusy(true)
 
-        client.send(messages: currentSession.messages) { [weak self] result in
+        currentRequest = client.send(messages: currentSession.messages, summary: currentSession.summary) { [weak self] result in
             DispatchQueue.main.async {
                 guard let self else { return }
+                self.currentRequest = nil
                 self.setBusy(false)
                 switch result {
                 case .success(let reply):
                     self.appendStoredMessage(ChatMessage(role: "assistant", content: reply))
+                    self.summarizeCurrentSessionIfNeeded()
                     self.onPetReply?(reply)
                 case .failure(let error):
-                    self.appendStoredMessage(ChatMessage(role: "assistant", content: error.localizedDescription))
+                    guard !self.isCancellation(error) else {
+                        self.appendMessage("요청을 취소했어요.", role: .assistant)
+                        return
+                    }
+                    self.lastFailedPrompt = text
+                    self.retryButton.isHidden = false
+                    let message = "\(error.localizedDescription)\n\n다시 시도할 수 있어요."
+                    self.appendStoredMessage(ChatMessage(role: "assistant", content: message))
                     self.onPetReply?(error.localizedDescription)
                 }
             }
         }
     }
 
+    private func cancelCurrentRequest() {
+        currentRequest?.cancel()
+        currentRequest = nil
+        setBusy(false)
+        appendMessage("요청을 취소했어요.", role: .assistant)
+    }
+
     private func setBusy(_ busy: Bool) {
         isBusy = busy
-        sendButton.isEnabled = !busy
         input.isEnabled = !busy
+        sendButton.image = NSImage(
+            systemSymbolName: busy ? "stop.circle.fill" : "arrow.up.circle.fill",
+            accessibilityDescription: busy ? "취소" : "보내기"
+        )
+        sendButton.contentTintColor = busy ? .systemRed : .controlAccentColor
         if busy {
             appendMessage("생각 중...", role: .assistant, transient: true)
+        } else {
+            removeTransientMessages()
         }
     }
 
@@ -307,10 +362,39 @@ final class ChatWindowController: NSWindowController {
 
     @objc private func clearCurrentSession() {
         currentSession.messages.removeAll()
+        currentSession.summary = ""
         currentSession.updatedAt = Date()
         currentSession.title = "새 대화"
+        lastFailedPrompt = nil
+        retryButton.isHidden = true
         saveCurrentSession()
         renderCurrentSession()
+    }
+
+    private func summarizeCurrentSessionIfNeeded() {
+        let maxMessages = 30
+        let keepMessages = 20
+        guard currentSession.messages.count > maxMessages else { return }
+
+        let archived = currentSession.messages.prefix(currentSession.messages.count - keepMessages)
+        let newSummary = archived.map { message in
+            let speaker = message.role == "user" ? "사용자" : "루마"
+            let compact = message.content
+                .replacingOccurrences(of: "\n", with: " ")
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+                .prefix(120)
+            return "- \(speaker): \(compact)"
+        }.joined(separator: "\n")
+
+        let previous = currentSession.summary.trimmingCharacters(in: .whitespacesAndNewlines)
+        currentSession.summary = ([previous, newSummary].filter { !$0.isEmpty }).joined(separator: "\n")
+        currentSession.messages = Array(currentSession.messages.suffix(keepMessages))
+        saveCurrentSession()
+        renderCurrentSession()
+    }
+
+    private func isCancellation(_ error: Error) -> Bool {
+        (error as NSError).domain == NSURLErrorDomain && (error as NSError).code == NSURLErrorCancelled
     }
 
     private func scrollToBottom() {

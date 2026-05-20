@@ -21,6 +21,31 @@ struct ChatResponse: Decodable {
     let choices: [Choice]
 }
 
+final class AIRequest {
+    private var tasks: [URLSessionDataTask] = []
+    private let lock = NSLock()
+    private var isCancelled = false
+
+    func add(_ task: URLSessionDataTask) {
+        lock.lock()
+        defer { lock.unlock() }
+        if isCancelled {
+            task.cancel()
+        } else {
+            tasks.append(task)
+        }
+    }
+
+    func cancel() {
+        lock.lock()
+        isCancelled = true
+        let currentTasks = tasks
+        tasks.removeAll()
+        lock.unlock()
+        currentTasks.forEach { $0.cancel() }
+    }
+}
+
 final class AIClient {
     private let settings: SettingsStore
     private lazy var searchClient = SearchClient(settings: settings)
@@ -29,9 +54,11 @@ final class AIClient {
         self.settings = settings
     }
 
-    func send(messages: [ChatMessage], completion: @escaping (Result<String, Error>) -> Void) {
+    @discardableResult
+    func send(messages: [ChatMessage], summary: String? = nil, completion: @escaping (Result<String, Error>) -> Void) -> AIRequest {
+        let requestHandle = AIRequest()
         if shouldSearch(messages.last?.content ?? ""), searchClient.isConfigured {
-            searchClient.search(query: messages.last?.content ?? "") { [weak self] result in
+            let searchTask = searchClient.search(query: messages.last?.content ?? "") { [weak self] result in
                 guard let self else { return }
                 var enrichedMessages = messages
                 if case .success(let results) = result, !results.isEmpty {
@@ -39,18 +66,26 @@ final class AIClient {
                 } else if case .failure(let error) = result {
                     enrichedMessages.append(ChatMessage(role: "system", content: "검색 시도 실패: \(error.localizedDescription). 이 한계를 사용자에게 짧게 알리고, 확실한 정보만 답한다."))
                 }
-                self.sendChat(messages: enrichedMessages, completion: completion)
+                if let chatTask = self.sendChat(messages: enrichedMessages, summary: summary, completion: completion) {
+                    requestHandle.add(chatTask)
+                }
             }
-            return
+            if let searchTask {
+                requestHandle.add(searchTask)
+            }
+            return requestHandle
         }
 
-        sendChat(messages: messages, completion: completion)
+        if let chatTask = sendChat(messages: messages, summary: summary, completion: completion) {
+            requestHandle.add(chatTask)
+        }
+        return requestHandle
     }
 
-    private func sendChat(messages: [ChatMessage], completion: @escaping (Result<String, Error>) -> Void) {
+    private func sendChat(messages: [ChatMessage], summary: String?, completion: @escaping (Result<String, Error>) -> Void) -> URLSessionDataTask? {
         do {
-            let request = try makeRequest(messages: messages)
-            URLSession.shared.dataTask(with: request) { data, _, error in
+            let request = try makeRequest(messages: messages, summary: summary)
+            let task = URLSession.shared.dataTask(with: request) { data, _, error in
                 if let error {
                     completion(.failure(error))
                     return
@@ -66,9 +101,12 @@ final class AIClient {
                     let body = String(data: data, encoding: .utf8) ?? ""
                     completion(.failure(AIClientError.invalidResponse(body)))
                 }
-            }.resume()
+            }
+            task.resume()
+            return task
         } catch {
             completion(.failure(error))
+            return nil
         }
     }
 
@@ -98,7 +136,7 @@ final class AIClient {
         """
     }
 
-    private func makeRequest(messages: [ChatMessage]) throws -> URLRequest {
+    private func makeRequest(messages: [ChatMessage], summary: String?) throws -> URLRequest {
         guard !settings.endpoint.isEmpty else {
             throw AIClientError.missingEndpoint
         }
@@ -124,11 +162,14 @@ final class AIClient {
             request.addValue("Bearer \(settings.apiKey)", forHTTPHeaderField: "Authorization")
         }
 
+        var contextMessages = [ChatMessage(role: "system", content: systemPrompt())]
+        if let summary, !summary.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            contextMessages.append(ChatMessage(role: "system", content: "이전 대화 요약 메모리:\n\(summary)"))
+        }
+
         let payload = ChatRequest(
             model: settings.model.isEmpty ? "gpt-4o-mini" : settings.model,
-            messages: [
-                ChatMessage(role: "system", content: systemPrompt()),
-            ] + Array(messages.suffix(24)),
+            messages: contextMessages + Array(messages.suffix(24)),
             temperature: 0.8
         )
         request.httpBody = try JSONEncoder().encode(payload)
