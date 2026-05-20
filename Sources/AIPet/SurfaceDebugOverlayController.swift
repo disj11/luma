@@ -34,7 +34,7 @@ final class SurfaceDebugOverlayController {
             window.isOpaque = false
             window.ignoresMouseEvents = true
             window.hasShadow = false
-            window.level = .floating
+            window.level = NSWindow.Level(rawValue: NSWindow.Level.floating.rawValue - 1)
             window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary]
             window.contentView = view
             window.orderFrontRegardless()

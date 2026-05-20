@@ -167,7 +167,12 @@ final class PetController {
     private func integrate(delta: CGFloat) {
         if let edgeSurface {
             if Date() < edgeInteractionUntil {
-                hold(on: edgeSurface)
+                guard let updatedEdge = world.surface(id: edgeSurface.id) else {
+                    release(from: edgeSurface)
+                    return
+                }
+                self.edgeSurface = updatedEdge
+                hold(on: updatedEdge)
                 return
             }
             release(from: edgeSurface)

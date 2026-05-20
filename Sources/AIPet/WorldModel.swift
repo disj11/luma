@@ -64,12 +64,29 @@ final class WorldModel {
             }
         }
 
-        return candidates.sorted {
-            if $0.zIndex == $1.zIndex {
-                return $0.frame.width * $0.frame.height > $1.frame.width * $1.frame.height
+        return candidates.sorted { lhs, rhs in
+            if lhs.zIndex != rhs.zIndex {
+                return lhs.zIndex > rhs.zIndex
             }
-            return $0.zIndex > $1.zIndex
+            return edgeDistance(lhs, from: petFrame) < edgeDistance(rhs, from: petFrame)
         }.first
+    }
+
+    func surface(id: String) -> Surface? {
+        surfaces.first { $0.id == id }
+    }
+
+    private func edgeDistance(_ surface: Surface, from petFrame: CGRect) -> CGFloat {
+        switch surface.kind {
+        case .windowBottom:
+            return abs(petFrame.maxY - surface.frame.midY) + abs(petFrame.midX - surface.frame.midX) * 0.02
+        case .windowLeftEdge:
+            return abs(petFrame.maxX - surface.frame.midX) + abs(petFrame.midY - surface.frame.midY) * 0.02
+        case .windowRightEdge:
+            return abs(petFrame.minX - surface.frame.midX) + abs(petFrame.midY - surface.frame.midY) * 0.02
+        case .screenBottom, .dockTop, .windowTop:
+            return .greatestFiniteMagnitude
+        }
     }
 
     private func refresh() {
@@ -115,6 +132,9 @@ final class WorldModel {
         for (index, info) in list.enumerated() {
             guard let pid = info[kCGWindowOwnerPID as String] as? Int, pid != ownPID else { continue }
             guard let layer = info[kCGWindowLayer as String] as? Int, layer == 0 else { continue }
+            if let alpha = info[kCGWindowAlpha as String] as? NSNumber, alpha.doubleValue < 0.05 {
+                continue
+            }
             guard let boundsDict = info[kCGWindowBounds as String] as? NSDictionary else { continue }
             guard let cgBounds = CGRect(dictionaryRepresentation: boundsDict) else { continue }
             guard cgBounds.width >= 120, cgBounds.height >= 80 else { continue }
