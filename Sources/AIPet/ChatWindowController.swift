@@ -358,6 +358,8 @@ private final class MessageBubbleView: NSView {
         label.font = .systemFont(ofSize: 13)
         label.textColor = role == .user ? .white : .labelColor
         label.attributedStringValue = renderedText()
+        label.allowsEditingTextAttributes = true
+        label.isSelectable = true
         label.translatesAutoresizingMaskIntoConstraints = false
         addSubview(label)
 
@@ -371,7 +373,7 @@ private final class MessageBubbleView: NSView {
 
     private func renderedText() -> NSAttributedString {
         guard role == .assistant,
-              let attributed = try? AttributedString(markdown: text, options: AttributedString.MarkdownParsingOptions(interpretedSyntax: .inlineOnlyPreservingWhitespace)) else {
+              let attributed = try? AttributedString(markdown: text) else {
             return NSAttributedString(string: text, attributes: [
                 .font: NSFont.systemFont(ofSize: 13),
                 .foregroundColor: role == .user ? NSColor.white : NSColor.labelColor
@@ -379,10 +381,12 @@ private final class MessageBubbleView: NSView {
         }
 
         let mutable = NSMutableAttributedString(attributed)
-        mutable.addAttributes([
-            .font: NSFont.systemFont(ofSize: 13),
-            .foregroundColor: NSColor.labelColor
-        ], range: NSRange(location: 0, length: mutable.length))
+        let fullRange = NSRange(location: 0, length: mutable.length)
+        mutable.addAttribute(.foregroundColor, value: NSColor.labelColor, range: fullRange)
+        mutable.enumerateAttribute(.font, in: fullRange) { value, range, _ in
+            guard value == nil else { return }
+            mutable.addAttribute(.font, value: NSFont.systemFont(ofSize: 13), range: range)
+        }
         return mutable
     }
 
