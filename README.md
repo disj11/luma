@@ -69,6 +69,7 @@ Movement polish:
 - API keys are stored in Keychain.
 - Chat sessions are stored in `~/Library/Application Support/Luma/ChatSessions`.
 - Optional search integration expects a JSON endpoint that accepts a `q` query parameter.
+- When running from Terminal, macOS may print `IMKCFRunLoopWakeUpReliable` input-method logs on first typing in text fields. This is a system input-method stderr message, not a Luma runtime failure.
 - Some macOS modes such as full screen Spaces and Stage Manager may require additional tuning.
 
 ## Search Endpoint Shape
@@ -79,7 +80,7 @@ Supported JSON result shapes include arrays or dictionaries containing `results`
 
 Examples:
 - SearXNG: `https://search.example.com/search?format=json`, no API key required for many private instances.
-- Brave Search API: `https://api.search.brave.com/res/v1/web/search`, search auth header `X-Subscription-Token`, search API key set to the Brave token.
+- Brave Search API: `https://api.search.brave.com/res/v1/web/search`, search header Key `X-Subscription-Token`, Value set to the Brave token.
 - Custom proxy: expose a GET endpoint that returns `{ "results": [{ "title": "...", "url": "...", "snippet": "..." }] }`.
 
 ## Quality Bar

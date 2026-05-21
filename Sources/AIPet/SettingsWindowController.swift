@@ -6,7 +6,7 @@ final class SettingsWindowController: NSWindowController {
     private let modelField = NSTextField()
     private let apiKeyField = NSSecureTextField()
     private let searchEndpointField = NSTextField()
-    private let searchApiKeyHeaderField = NSTextField()
+    private let searchApiKeyHeaderField = NSComboBox()
     private let searchApiKeyField = NSSecureTextField()
     private let personaField = NSTextView()
 
@@ -68,8 +68,7 @@ final class SettingsWindowController: NSWindowController {
         root.addArrangedSubview(row(title: "모델", subtitle: "요청에 사용할 모델 이름입니다.", field: modelField))
         root.addArrangedSubview(row(title: "API 키", subtitle: "Keychain에 저장됩니다.", field: apiKeyField))
         root.addArrangedSubview(row(title: "검색 엔드포인트", subtitle: "선택 사항입니다. GET 요청에 q 파라미터를 붙여 JSON 검색 결과를 가져옵니다.", field: searchEndpointField))
-        root.addArrangedSubview(row(title: "검색 인증 헤더", subtitle: "예: Authorization, X-Subscription-Token. 비워두면 Authorization을 사용합니다.", field: searchApiKeyHeaderField))
-        root.addArrangedSubview(row(title: "검색 API 키", subtitle: "선택 사항입니다. Authorization 헤더는 Bearer 토큰으로, 그 외 헤더는 원문으로 전송됩니다.", field: searchApiKeyField))
+        root.addArrangedSubview(searchHeadersSection())
 
         let personaLabel = NSTextField(labelWithString: "페르소나")
         personaLabel.font = .systemFont(ofSize: 13, weight: .semibold)
@@ -141,6 +140,102 @@ final class SettingsWindowController: NSWindowController {
             field.widthAnchor.constraint(equalToConstant: 580),
             field.heightAnchor.constraint(equalToConstant: 30)
         ])
+    }
+
+    private func searchHeadersSection() -> NSView {
+        let stack = NSStackView()
+        stack.orientation = .vertical
+        stack.alignment = .leading
+        stack.spacing = 8
+
+        let label = NSTextField(labelWithString: "검색 요청 헤더")
+        label.font = .systemFont(ofSize: 13, weight: .semibold)
+        stack.addArrangedSubview(label)
+
+        let table = RoundedPanelView()
+        table.fillColor = .controlBackgroundColor.withAlphaComponent(0.7)
+        table.cornerRadius = 10
+        table.translatesAutoresizingMaskIntoConstraints = false
+        stack.addArrangedSubview(table)
+
+        let content = NSStackView()
+        content.orientation = .vertical
+        content.spacing = 8
+        content.edgeInsets = NSEdgeInsets(top: 10, left: 10, bottom: 10, right: 10)
+        content.translatesAutoresizingMaskIntoConstraints = false
+        table.addSubview(content)
+
+        let header = NSStackView()
+        header.orientation = .horizontal
+        header.spacing = 8
+        header.addArrangedSubview(headerLabel("Key", width: 218))
+        header.addArrangedSubview(headerLabel("Value", width: 340))
+        content.addArrangedSubview(header)
+
+        let row = NSStackView()
+        row.orientation = .horizontal
+        row.spacing = 8
+
+        configureHeaderKeyInput()
+        configureHeaderValueInput()
+        row.addArrangedSubview(searchApiKeyHeaderField)
+        row.addArrangedSubview(searchApiKeyField)
+        content.addArrangedSubview(row)
+
+        NSLayoutConstraint.activate([
+            table.widthAnchor.constraint(equalToConstant: 580),
+            content.leadingAnchor.constraint(equalTo: table.leadingAnchor),
+            content.trailingAnchor.constraint(equalTo: table.trailingAnchor),
+            content.topAnchor.constraint(equalTo: table.topAnchor),
+            content.bottomAnchor.constraint(equalTo: table.bottomAnchor),
+            searchApiKeyHeaderField.widthAnchor.constraint(equalToConstant: 218),
+            searchApiKeyHeaderField.heightAnchor.constraint(equalToConstant: 30),
+            searchApiKeyField.widthAnchor.constraint(equalToConstant: 340),
+            searchApiKeyField.heightAnchor.constraint(equalToConstant: 30)
+        ])
+
+        let note = NSTextField(wrappingLabelWithString: "Authorization은 Bearer 토큰으로 자동 전송합니다. Brave Search는 Key에 X-Subscription-Token, Value에 Brave 토큰을 넣으면 됩니다.")
+        note.textColor = .tertiaryLabelColor
+        note.font = .systemFont(ofSize: 11)
+        stack.addArrangedSubview(note)
+        note.widthAnchor.constraint(equalToConstant: 580).isActive = true
+        return stack
+    }
+
+    private func configureHeaderKeyInput() {
+        searchApiKeyHeaderField.removeAllItems()
+        searchApiKeyHeaderField.addItems(withObjectValues: [
+            "Authorization",
+            "X-Subscription-Token",
+            "X-API-Key",
+            "Api-Key"
+        ])
+        searchApiKeyHeaderField.placeholderString = "Header name"
+        searchApiKeyHeaderField.completes = true
+        searchApiKeyHeaderField.isEditable = true
+        searchApiKeyHeaderField.isBordered = true
+        searchApiKeyHeaderField.focusRingType = .default
+        searchApiKeyHeaderField.font = .systemFont(ofSize: 13)
+    }
+
+    private func configureHeaderValueInput() {
+        searchApiKeyField.placeholderString = "검색 API 키 또는 토큰"
+        searchApiKeyField.isBordered = true
+        searchApiKeyField.isBezeled = true
+        searchApiKeyField.bezelStyle = .roundedBezel
+        searchApiKeyField.drawsBackground = true
+        searchApiKeyField.backgroundColor = .textBackgroundColor
+        searchApiKeyField.focusRingType = .default
+        searchApiKeyField.font = .systemFont(ofSize: 13)
+        searchApiKeyField.lineBreakMode = .byTruncatingMiddle
+    }
+
+    private func headerLabel(_ text: String, width: CGFloat) -> NSTextField {
+        let label = NSTextField(labelWithString: text)
+        label.textColor = .secondaryLabelColor
+        label.font = .systemFont(ofSize: 11, weight: .medium)
+        label.widthAnchor.constraint(equalToConstant: width).isActive = true
+        return label
     }
 
     private func placeWindowOnVisibleScreen() {
