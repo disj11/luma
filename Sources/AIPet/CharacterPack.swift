@@ -43,11 +43,22 @@ struct CharacterPack: Decodable {
         poses[key.rawValue]
     }
 
+    static let bundledPackDirectories = ["LunaSera", "NeonMika", "VelvetRin", "AmaneSora"]
+
     static func bundledDefault() -> LoadedCharacterPack? {
         LoadedCharacterPack(
             manifestURL: Bundle.module.characterPackManifestURL(subdirectory: "Pets/LunaSera"),
             isBundled: true
         )
+    }
+
+    static func bundledPacks() -> [LoadedCharacterPack] {
+        bundledPackDirectories.compactMap { directory in
+            LoadedCharacterPack(
+                manifestURL: Bundle.module.characterPackManifestURL(subdirectory: "Pets/\(directory)"),
+                isBundled: true
+            )
+        }
     }
 }
 
@@ -206,8 +217,10 @@ final class CharacterPackLibrary {
 
     func availablePacks() -> [LoadedCharacterPack] {
         var packs: [LoadedCharacterPack] = []
-        if let bundled = CharacterPack.bundledDefault() {
-            packs.append(bundled)
+        for bundled in CharacterPack.bundledPacks() {
+            if !packs.contains(where: { $0.manifest.id == bundled.manifest.id }) {
+                packs.append(bundled)
+            }
         }
 
         for directory in [userCharactersDirectory, legacyUserCharactersDirectory] {

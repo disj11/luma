@@ -25,7 +25,7 @@ The app starts as a menu bar accessory with an original desktop character compan
 ## Current MVP
 
 - Transparent floating pet window
-- Production-style original character pack with independent pose PNGs and procedural vector fallback
+- Four bundled production-style character packs with independent pose PNGs and persona manifests
 - Stable facing direction, hover dwell reactions, squash/stretch, jump/fall rotation, walking bounce, dynamic shadow, speech bubbles, and manifest-based character packs
 - Idle/walk/jump/fall/sit/sleep/groom/play/happy/alert states
 - Screen bottom, Dock top approximation, visible window top surfaces, and window edge interactions
@@ -44,17 +44,17 @@ The app starts as a menu bar accessory with an original desktop character compan
 
 ## Character Assets
 
-The main character is a manifest-based character pack. Authoring rules are documented in `CHARACTER_PACK_STANDARD.md`.
+The characters are manifest-based character packs. Authoring rules are documented in `CHARACTER_PACK_STANDARD.md`.
 
 The current character art is stored as isolated pose PNGs in `Assets/Pets/LunaSera/poses` and copied into the SwiftPM resource bundle at `Sources/AIPet/Resources/Pets/LunaSera/poses`.
 
-The current character has 12 poses: idle, walk 1, walk 2, jump, fall, sit, sleep, wave, happy, alert, play, and peek.
+Each bundled character has 12 poses: idle, walk 1, walk 2, jump, fall, sit, sleep, wave, happy, alert, play, and peek.
 
 The original source sheet is kept at `Assets/Pets/LunaSera/luna-sera-pose-sheet-chroma.png`. Runtime rendering uses the extracted pose files rather than cropping from the source sheet, which avoids clipping and neighboring-pose artifacts.
 
 Character packs are selected through the `Characters` menu. User-installed packs are copied into `~/Library/Application Support/Luma/Characters`.
 
-On first launch, the built-in character is `루나 세라`, an original fantasy-idol mage companion with silver-lavender twin tails, a crescent ornament, and star-magic accents. Additional characters can be installed from the `Characters` menu by selecting a folder that contains a valid `manifest.json`.
+On first launch, the default character is `루나 세라`, an original fantasy-idol mage companion with silver-lavender twin tails, a crescent ornament, and star-magic accents. The bundled roster also includes `미카 네온`, `린 벨벳`, and `아마네 소라`, each with a distinct palette and persona. Additional characters can be installed from the `Characters` menu by selecting a folder that contains a valid `manifest.json`.
 
 Movement polish:
 - Facing direction changes only after a clear velocity threshold and cooldown, preventing rapid left/right flipping.
