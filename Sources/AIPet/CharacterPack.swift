@@ -43,7 +43,7 @@ struct CharacterPack: Decodable {
         poses[key.rawValue]
     }
 
-    static let bundledPackDirectories = ["LunaSera", "NeonMika", "VelvetRin", "AmaneSora"]
+    static let bundledPackDirectories = ["LunaSera", "KohakuMori"]
 
     static func bundledDefault() -> LoadedCharacterPack? {
         LoadedCharacterPack(

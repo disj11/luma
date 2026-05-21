@@ -23,7 +23,7 @@ MyCharacter/
    └─ peek.png
 ```
 
-현재 번들 캐릭터는 `Sources/AIPet/Resources/Pets` 아래에 들어 있다. 기본 캐릭터는 `LunaSera`이고, 추가 번들 캐릭터로 `NeonMika`, `VelvetRin`, `AmaneSora`가 포함된다.
+현재 번들 캐릭터는 `Sources/AIPet/Resources/Pets` 아래에 들어 있다. 기본 캐릭터는 `LunaSera`이고, 추가 번들 캐릭터로 `KohakuMori`가 포함된다.
 
 앱에서 캐릭터를 추가하는 방법:
 
@@ -34,7 +34,7 @@ MyCharacter/
 5. 앱은 해당 폴더를 `~/Library/Application Support/Luma/Characters/<character-id>`로 복사하고 즉시 선택한다.
 6. `포즈 미리보기`에서 렌더 박스, 실제 alpha 영역, 하단 기준선을 확인한다.
 
-처음 실행 시 기본 선택 캐릭터는 내장된 `루나 세라`다. 캐릭터 메뉴에서는 함께 제공되는 `미카 네온`, `린 벨벳`, `아마네 소라`도 선택할 수 있다.
+처음 실행 시 기본 선택 캐릭터는 내장된 `루나 세라`다. 캐릭터 메뉴에서는 함께 제공되는 `모리 코하쿠`도 선택할 수 있다.
 
 ## 필수 포즈
 

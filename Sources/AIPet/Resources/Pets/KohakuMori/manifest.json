@@ -1,0 +1,27 @@
+{
+  "id": "kohaku-mori",
+  "displayName": "모리 코하쿠",
+  "version": 1,
+  "author": "Luma",
+  "persona": "너는 사용자의 macOS 화면 위를 뛰어다니는 오리지널 숲의 배달부 '모리 코하쿠'야. 짧은 보브컷, 초록 후드, 여우귀 모양 후드, 커다란 장갑, 작은 가방과 방울 장식이 시그니처야. 한국어로 활기차고 다정하게 답하되, 정보 요청은 정확히 찾아서 현실적인 선택지로 정리한다. 유아적인 말투는 피하고, 작지만 믿음직한 동료처럼 행동해.",
+  "defaultPose": "idle",
+  "canvasSize": 512,
+  "render": {
+    "baseSize": 202,
+    "baseYOffset": 9
+  },
+  "poses": {
+    "idle": { "file": "poses/00-idle.png", "motion": "breathe" },
+    "walk": { "file": "poses/01-walk-1.png", "motion": "walk", "crossfade": false },
+    "walkAlt": { "file": "poses/02-walk-2.png", "motion": "walk", "crossfade": false },
+    "jump": { "file": "poses/03-jump.png", "motion": "jump", "scale": 1.04, "yOffset": 18, "crossfade": false },
+    "fall": { "file": "poses/04-fall.png", "motion": "fall", "scale": 1.04, "yOffset": 6, "crossfade": false },
+    "sit": { "file": "poses/05-sit.png", "motion": "sit" },
+    "sleep": { "file": "poses/06-sleep.png", "motion": "sleep", "scale": 0.94, "yOffset": -3 },
+    "groom": { "file": "poses/07-wave.png", "motion": "groom" },
+    "happy": { "file": "poses/08-happy.png", "motion": "happy" },
+    "alert": { "file": "poses/09-alert.png", "motion": "alert", "crossfade": false },
+    "play": { "file": "poses/10-play.png", "motion": "play", "scale": 1.04 },
+    "peek": { "file": "poses/11-peek.png", "motion": "peek", "scale": 1.02, "yOffset": -8 }
+  }
+}

@@ -46,15 +46,15 @@ The app starts as a menu bar accessory with an original desktop character compan
 
 The characters are manifest-based character packs. Authoring rules are documented in `CHARACTER_PACK_STANDARD.md`.
 
-The current character art is stored as isolated pose PNGs in `Assets/Pets/LunaSera/poses` and copied into the SwiftPM resource bundle at `Sources/AIPet/Resources/Pets/LunaSera/poses`.
+The character art is stored as isolated pose PNGs in `Assets/Pets/<Character>/poses` and copied into the SwiftPM resource bundle at `Sources/AIPet/Resources/Pets/<Character>/poses`.
 
 Each bundled character has 12 poses: idle, walk 1, walk 2, jump, fall, sit, sleep, wave, happy, alert, play, and peek.
 
-The original source sheet is kept at `Assets/Pets/LunaSera/luna-sera-pose-sheet-chroma.png`. Runtime rendering uses the extracted pose files rather than cropping from the source sheet, which avoids clipping and neighboring-pose artifacts.
+Original source sheets are kept under `Assets/Pets`. Runtime rendering uses the extracted pose files rather than cropping from the source sheet, which avoids clipping and neighboring-pose artifacts.
 
 Character packs are selected through the `Characters` menu. User-installed packs are copied into `~/Library/Application Support/Luma/Characters`.
 
-On first launch, the default character is `루나 세라`, an original fantasy-idol mage companion with silver-lavender twin tails, a crescent ornament, and star-magic accents. The bundled roster also includes `미카 네온`, `린 벨벳`, and `아마네 소라`, each with a distinct palette and persona. Additional characters can be installed from the `Characters` menu by selecting a folder that contains a valid `manifest.json`.
+On first launch, the default character is `루나 세라`, an original fantasy-idol mage companion with silver-lavender twin tails, a crescent ornament, and star-magic accents. The bundled roster also includes `모리 코하쿠`, a forest courier with a short bob, green hood, fox-ear silhouette, oversized gloves, satchel, and leaf-and-bell accents. Additional characters can be installed from the `Characters` menu by selecting a folder that contains a valid `manifest.json`.
 
 Movement polish:
 - Facing direction changes only after a clear velocity threshold and cooldown, preventing rapid left/right flipping.
