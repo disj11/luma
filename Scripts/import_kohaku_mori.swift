@@ -42,12 +42,12 @@ for outputRoot in outputRoots {
     try FileManager.default.createDirectory(at: posesURL, withIntermediateDirectories: true)
 
     for (index, pose) in poses.enumerated() {
-        let cropped = try cropPose(from: cgImage, index: index)
+        let cropped = try cropPose(from: cgImage, index: index, facesRightByDefault: pose.key == "walk" || pose.key == "walkAlt" || pose.key == "play")
         try writePNG(cropped, to: posesURL.appendingPathComponent(pose.file))
     }
 }
 
-func cropPose(from image: CGImage, index: Int) throws -> NSImage {
+func cropPose(from image: CGImage, index: Int, facesRightByDefault: Bool) throws -> NSImage {
     let columns = 4
     let rows = 3
     let cellWidth = image.width / columns
@@ -93,7 +93,16 @@ func cropPose(from image: CGImage, index: Int) throws -> NSImage {
     let drawSize = CGSize(width: CGFloat(subject.width) * scale, height: CGFloat(subject.height) * scale)
     let x = (CGFloat(canvasSize) - drawSize.width) / 2
     let y: CGFloat = index == 11 ? 122 : 72
-    context.draw(subject, in: CGRect(x: x, y: y, width: drawSize.width, height: drawSize.height))
+    let target = CGRect(x: x, y: y, width: drawSize.width, height: drawSize.height)
+    if facesRightByDefault {
+        context.saveGState()
+        context.translateBy(x: CGFloat(canvasSize), y: 0)
+        context.scaleBy(x: -1, y: 1)
+        context.draw(subject, in: CGRect(x: CGFloat(canvasSize) - target.maxX, y: target.minY, width: target.width, height: target.height))
+        context.restoreGState()
+    } else {
+        context.draw(subject, in: target)
+    }
 
     guard let output = context.makeImage() else {
         throw NSError(domain: "KohakuMoriImport", code: 4)
